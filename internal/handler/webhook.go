@@ -15,6 +15,7 @@ import (
 
 	"github.com/xoejang/gitel/internal/model"
 	"github.com/xoejang/gitel/internal/service"
+	"github.com/xoejang/gitel/pkg/telegram"
 )
 
 const signatureHeader = "X-Hub-Signature-256"
@@ -25,14 +26,16 @@ type WebhookHandler struct {
 	secret    string
 	extractor *service.Extractor
 	formatter *service.Formatter
+	telegram  *telegram.Client
 }
 
 // newWebhookHandler creates a new webhookHandler.
-func NewWebhookHandler(secret string, extractor *service.Extractor, formatter *service.Formatter) *WebhookHandler {
+func NewWebhookHandler(secret string, extractor *service.Extractor, formatter *service.Formatter, telegram *telegram.Client) *WebhookHandler {
 	return &WebhookHandler{
 		secret:    secret,
 		extractor: extractor,
 		formatter: formatter,
+		telegram:  telegram,
 	}
 }
 
@@ -84,6 +87,11 @@ func (h *WebhookHandler) HandleGitHubWebhook(w http.ResponseWriter, r *http.Requ
 	}
 
 	log.Printf("[webhook] LLM summary:\n%s", summary)
+
+	msg := telegram.FormatMessage(extracted, summary)
+	if err := h.telegram.SendMessage(ctx, msg); err != nil {
+		log.Printf("[webhook] failed to send telegram message: %v", err)
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))

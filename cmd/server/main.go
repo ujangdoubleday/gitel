@@ -11,6 +11,7 @@ import (
 	"github.com/xoejang/gitel/internal/handler"
 	"github.com/xoejang/gitel/internal/service"
 	"github.com/xoejang/gitel/pkg/llm"
+	"github.com/xoejang/gitel/pkg/telegram"
 )
 
 func main() {
@@ -22,7 +23,8 @@ func main() {
 	extractor := service.NewExtractor()
 	llmClient := llm.NewClient(cfg.LLM.APIKey, cfg.LLM.Model, cfg.LLM.BaseURL, cfg.LLM.Timeout)
 	formatter := service.NewFormatter(llmClient)
-	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor, formatter)
+	telegramClient := telegram.NewClient(cfg.Telegram.BotToken, cfg.Telegram.ChatID)
+	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor, formatter, telegramClient)
 	server := handler.NewServer(cfg.Server.Port, webhookHandler)
 
 	go func() {
