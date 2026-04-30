@@ -10,6 +10,9 @@ import (
 	"log"
 	"net/http"
 
+	"context"
+	"time"
+
 	"github.com/xoejang/gitel/internal/model"
 	"github.com/xoejang/gitel/internal/service"
 )
@@ -21,13 +24,15 @@ const signaturePrefix = "sha256="
 type WebhookHandler struct {
 	secret    string
 	extractor *service.Extractor
+	formatter *service.Formatter
 }
 
 // newWebhookHandler creates a new webhookHandler.
-func NewWebhookHandler(secret string, extractor *service.Extractor) *WebhookHandler {
+func NewWebhookHandler(secret string, extractor *service.Extractor, formatter *service.Formatter) *WebhookHandler {
 	return &WebhookHandler{
 		secret:    secret,
 		extractor: extractor,
+		formatter: formatter,
 	}
 }
 
@@ -66,6 +71,19 @@ func (h *WebhookHandler) HandleGitHubWebhook(w http.ResponseWriter, r *http.Requ
 	for _, c := range extracted.Commits {
 		log.Printf("[webhook] commit %s by %s: %s", c.ID[:7], c.Author, c.Message)
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	summary, err := h.formatter.FormatPushEvent(ctx, extracted)
+	if err != nil {
+		log.Printf("[webhook] failed to format with LLM: %v", err)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok","llm":"failed"}`))
+		return
+	}
+
+	log.Printf("[webhook] LLM summary:\n%s", summary)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))

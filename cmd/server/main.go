@@ -10,6 +10,7 @@ import (
 	"github.com/xoejang/gitel/internal/config"
 	"github.com/xoejang/gitel/internal/handler"
 	"github.com/xoejang/gitel/internal/service"
+	"github.com/xoejang/gitel/pkg/llm"
 )
 
 func main() {
@@ -19,7 +20,9 @@ func main() {
 	}
 
 	extractor := service.NewExtractor()
-	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor)
+	llmClient := llm.NewClient(cfg.LLM.APIKey, cfg.LLM.Model, cfg.LLM.BaseURL, cfg.LLM.Timeout)
+	formatter := service.NewFormatter(llmClient)
+	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor, formatter)
 	server := handler.NewServer(cfg.Server.Port, webhookHandler)
 
 	go func() {
