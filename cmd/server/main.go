@@ -9,6 +9,7 @@ import (
 
 	"github.com/xoejang/gitel/internal/config"
 	"github.com/xoejang/gitel/internal/handler"
+	"github.com/xoejang/gitel/internal/service"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret)
+	extractor := service.NewExtractor()
+	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor)
 	server := handler.NewServer(cfg.Server.Port, webhookHandler)
 
 	go func() {

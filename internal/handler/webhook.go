@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/xoejang/gitel/internal/model"
+	"github.com/xoejang/gitel/internal/service"
 )
 
 const signatureHeader = "X-Hub-Signature-256"
@@ -18,12 +19,16 @@ const signaturePrefix = "sha256="
 
 // webhookHandler handles GitHub webhook events.
 type WebhookHandler struct {
-	secret string
+	secret    string
+	extractor *service.Extractor
 }
 
-// newWebhookHandler creates a new WebhookHandler.
-func NewWebhookHandler(secret string) *WebhookHandler {
-	return &WebhookHandler{secret: secret}
+// newWebhookHandler creates a new webhookHandler.
+func NewWebhookHandler(secret string, extractor *service.Extractor) *WebhookHandler {
+	return &WebhookHandler{
+		secret:    secret,
+		extractor: extractor,
+	}
 }
 
 // handleGitHubWebhook receives and processes GitHub push events.
@@ -53,8 +58,14 @@ func (h *WebhookHandler) HandleGitHubWebhook(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	log.Printf("[webhook] received push to %s (%d commits) by %s",
-		event.Ref, len(event.Commits), event.Pusher.Name)
+	extracted := h.extractor.Extract(&event)
+
+	log.Printf("[webhook] repository: %s, branch: %s, pusher: %s, commits after filter: %d",
+		extracted.Repository, extracted.Branch, extracted.Pusher, extracted.CommitCount)
+
+	for _, c := range extracted.Commits {
+		log.Printf("[webhook] commit %s by %s: %s", c.ID[:7], c.Author, c.Message)
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
