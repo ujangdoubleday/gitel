@@ -7,15 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
-
-	"context"
-	"time"
 
 	"github.com/xoejang/gitel/internal/model"
 	"github.com/xoejang/gitel/internal/service"
-	"github.com/xoejang/gitel/pkg/telegram"
 )
 
 const signatureHeader = "X-Hub-Signature-256"
@@ -25,35 +21,33 @@ const signaturePrefix = "sha256="
 type WebhookHandler struct {
 	secret    string
 	extractor *service.Extractor
-	formatter *service.Formatter
-	telegram  *telegram.Client
+	processor *service.Processor
 }
 
 // newWebhookHandler creates a new webhookHandler.
-func NewWebhookHandler(secret string, extractor *service.Extractor, formatter *service.Formatter, telegram *telegram.Client) *WebhookHandler {
+func NewWebhookHandler(secret string, extractor *service.Extractor, processor *service.Processor) *WebhookHandler {
 	return &WebhookHandler{
 		secret:    secret,
 		extractor: extractor,
-		formatter: formatter,
-		telegram:  telegram,
+		processor: processor,
 	}
 }
 
-// handleGitHubWebhook receives and processes GitHub push events.
+// handleGitHubWebhook receives and processes GitHub push events asynchronously.
 func (h *WebhookHandler) HandleGitHubWebhook(w http.ResponseWriter, r *http.Request) {
 	// limit request body to 1MB to prevent abuse.
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("[webhook] failed to read body: %v", err)
+		slog.Error("failed to read webhook body", "error", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	// verify HMAC-SHA256 signature.
 	if err := h.verifySignature(r, body); err != nil {
-		log.Printf("[webhook] signature verification failed: %v", err)
+		slog.Error("signature verification failed", "error", err)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -61,37 +55,22 @@ func (h *WebhookHandler) HandleGitHubWebhook(w http.ResponseWriter, r *http.Requ
 	// parse the push event.
 	var event model.PushEvent
 	if err := json.Unmarshal(body, &event); err != nil {
-		log.Printf("[webhook] failed to parse JSON: %v", err)
+		slog.Error("failed to parse webhook JSON", "error", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	extracted := h.extractor.Extract(&event)
 
-	log.Printf("[webhook] repository: %s, branch: %s, pusher: %s, commits after filter: %d",
-		extracted.Repository, extracted.Branch, extracted.Pusher, extracted.CommitCount)
+	slog.Info("webhook received",
+		"repository", extracted.Repository,
+		"branch", extracted.Branch,
+		"pusher", extracted.Pusher,
+		"commits_after_filter", extracted.CommitCount,
+	)
 
-	for _, c := range extracted.Commits {
-		log.Printf("[webhook] commit %s by %s: %s", c.ID[:7], c.Author, c.Message)
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
-
-	summary, err := h.formatter.FormatPushEvent(ctx, extracted)
-	if err != nil {
-		log.Printf("[webhook] failed to format with LLM: %v", err)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","llm":"failed"}`))
-		return
-	}
-
-	log.Printf("[webhook] LLM summary:\n%s", summary)
-
-	msg := telegram.FormatMessage(extracted, summary)
-	if err := h.telegram.SendMessage(ctx, msg); err != nil {
-		log.Printf("[webhook] failed to send telegram message: %v", err)
-	}
+	// process LLM and telegram asynchronously so github gets immediate response.
+	h.processor.ProcessAsync(extracted)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
