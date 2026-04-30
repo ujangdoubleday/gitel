@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/xoejang/gitel/internal/model"
-	"github.com/xoejang/gitel/pkg/llm"
+	"github.com/ujangdoubleday/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/pkg/llm"
 )
 
 // formatter builds prompts and calls the LLM to generate human-readable summaries.

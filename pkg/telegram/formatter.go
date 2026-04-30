@@ -5,7 +5,7 @@ import (
 	"html"
 	"strings"
 
-	"github.com/xoejang/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/internal/model"
 )
 
 // formatMessage builds an HTML-formatted Telegram message from the LLM summary.
