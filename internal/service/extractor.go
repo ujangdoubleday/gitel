@@ -3,7 +3,7 @@ package service
 import (
 	"strings"
 
-	"github.com/xoejang/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/internal/model"
 )
 
 // extractor handles parsing and filtering of GitHub webhook payloads.

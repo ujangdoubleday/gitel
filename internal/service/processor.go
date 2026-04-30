@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xoejang/gitel/internal/model"
-	"github.com/xoejang/gitel/pkg/telegram"
+	"github.com/ujangdoubleday/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/pkg/telegram"
 )
 
 // processor handles the async pipeline from extracted event to telegram message.

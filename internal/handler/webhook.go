@@ -10,8 +10,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/xoejang/gitel/internal/model"
-	"github.com/xoejang/gitel/internal/service"
+	"github.com/ujangdoubleday/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/internal/service"
 )
 
 const signatureHeader = "X-Hub-Signature-256"

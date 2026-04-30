@@ -4,24 +4,24 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/xoejang/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/internal/model"
 )
 
 func TestFormatMessage(t *testing.T) {
 	event := &model.ExtractedPushEvent{
-		Repository:  "xoejang/gitel",
-		Pusher:      "xoejang",
+		Repository:  "ujangdoubleday/gitel",
+		Pusher:      "ujangdoubleday",
 		Branch:      "main",
 		CommitCount: 2,
 		Commits: []model.CommitInfo{
-			{ID: "a1b2c3d", Author: "xoejang", Message: "feat: add webhook", Timestamp: "2024-01-01T10:00:00Z"},
+			{ID: "a1b2c3d", Author: "ujangdoubleday", Message: "feat: add webhook", Timestamp: "2024-01-01T10:00:00Z"},
 		},
 	}
 
 	summary := "ringkasan:\n- menambahkan webhook receiver"
 	result := FormatMessage(event, summary)
 
-	if !strings.Contains(result, "<b>xoejang/gitel</b>") {
+	if !strings.Contains(result, "<b>ujangdoubleday/gitel</b>") {
 		t.Errorf("expected repository in bold, got: %s", result)
 	}
 	if !strings.Contains(result, "<code>main</code>") {
@@ -52,18 +52,18 @@ func TestFormatMessageEscapesHTML(t *testing.T) {
 
 func TestFormatFallbackMessage(t *testing.T) {
 	event := &model.ExtractedPushEvent{
-		Repository:  "xoejang/gitel",
-		Pusher:      "xoejang",
+		Repository:  "ujangdoubleday/gitel",
+		Pusher:      "ujangdoubleday",
 		Branch:      "dev",
 		CommitCount: 1,
 		Commits: []model.CommitInfo{
-			{ID: "a1b2c3d", Author: "xoejang", Message: "fix: bug parser"},
+			{ID: "a1b2c3d", Author: "ujangdoubleday", Message: "fix: bug parser"},
 		},
 	}
 
 	result := FormatFallbackMessage(event)
 
-	if !strings.Contains(result, "<b>xoejang/gitel</b>") {
+	if !strings.Contains(result, "<b>ujangdoubleday/gitel</b>") {
 		t.Errorf("expected repository in bold, got: %s", result)
 	}
 	if !strings.Contains(result, "<code>a1b2c3d</code>") {

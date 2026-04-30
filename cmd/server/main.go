@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/xoejang/gitel/internal/config"
-	"github.com/xoejang/gitel/internal/handler"
-	"github.com/xoejang/gitel/internal/service"
-	"github.com/xoejang/gitel/pkg/llm"
-	"github.com/xoejang/gitel/pkg/telegram"
+	"github.com/ujangdoubleday/gitel/internal/config"
+	"github.com/ujangdoubleday/gitel/internal/handler"
+	"github.com/ujangdoubleday/gitel/internal/service"
+	"github.com/ujangdoubleday/gitel/pkg/llm"
+	"github.com/ujangdoubleday/gitel/pkg/telegram"
 )
 
 func main() {

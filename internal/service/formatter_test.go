@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoejang/gitel/internal/model"
-	"github.com/xoejang/gitel/pkg/llm"
+	"github.com/ujangdoubleday/gitel/internal/model"
+	"github.com/ujangdoubleday/gitel/pkg/llm"
 )
 
 func TestFormatPushEvent(t *testing.T) {
@@ -18,7 +18,7 @@ func TestFormatPushEvent(t *testing.T) {
 			{
 				"message": map[string]interface{}{
 					"role":    "assistant",
-					"content": "ringkasan:\n- xoejang push ke branch main\n- menambahkan fitur webhook receiver\n- memperbaiki edge case parser",
+					"content": "ringkasan:\n- ujangdoubleday push ke branch main\n- menambahkan fitur webhook receiver\n- memperbaiki edge case parser",
 				},
 			},
 		},
@@ -42,12 +42,12 @@ func TestFormatPushEvent(t *testing.T) {
 	formatter := NewFormatter(client)
 
 	event := &model.ExtractedPushEvent{
-		Repository:  "xoejang/gitel",
-		Pusher:      "xoejang",
+		Repository:  "ujangdoubleday/gitel",
+		Pusher:      "ujangdoubleday",
 		Branch:      "main",
 		CommitCount: 2,
 		Commits: []model.CommitInfo{
-			{ID: "a1b2c3d", Author: "xoejang", Message: "feat: add webhook receiver", Timestamp: "2024-01-01T10:00:00Z", URL: "http://example.com/1"},
+			{ID: "a1b2c3d", Author: "ujangdoubleday", Message: "feat: add webhook receiver", Timestamp: "2024-01-01T10:00:00Z", URL: "http://example.com/1"},
 			{ID: "d4e5f6g", Author: "johndoe", Message: "fix: handle edge case", Timestamp: "2024-01-01T11:00:00Z", URL: "http://example.com/2"},
 		},
 	}
