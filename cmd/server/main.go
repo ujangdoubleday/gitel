@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,22 +15,29 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
 
 	extractor := service.NewExtractor()
 	llmClient := llm.NewClient(cfg.LLM.APIKey, cfg.LLM.Model, cfg.LLM.BaseURL, cfg.LLM.Timeout)
 	formatter := service.NewFormatter(llmClient)
 	telegramClient := telegram.NewClient(cfg.Telegram.BotToken, cfg.Telegram.ChatID)
-	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor, formatter, telegramClient)
+	processor := service.NewProcessor(formatter, telegramClient)
+
+	webhookHandler := handler.NewWebhookHandler(cfg.Webhook.Secret, extractor, processor)
 	server := handler.NewServer(cfg.Server.Port, webhookHandler)
 
 	go func() {
-		log.Printf("server starting on port %s", cfg.Server.Port)
+		slog.Info("server starting", "port", cfg.Server.Port)
 		if err := server.Start(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server failed: %v", err)
+			slog.Error("server failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -38,9 +45,13 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("shutting down gracefully...")
+	slog.Info("shutting down gracefully")
 	if err := server.Shutdown(); err != nil {
-		log.Printf("server forced to shutdown: %v", err)
+		slog.Error("server shutdown error", "error", err)
 	}
-	log.Println("server exited")
+
+	slog.Info("waiting for background jobs to complete")
+	processor.Wait()
+
+	slog.Info("server exited")
 }
