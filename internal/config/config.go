@@ -9,9 +9,10 @@ import (
 
 // config holds all application configurations.
 type Config struct {
-	Server  ServerConfig
-	Webhook WebhookConfig
-	LLM     LLMConfig
+	Server   ServerConfig
+	Webhook  WebhookConfig
+	LLM      LLMConfig
+	Telegram TelegramConfig
 }
 
 // serverConfig holds HTTP server configuration.
@@ -32,6 +33,12 @@ type LLMConfig struct {
 	Timeout time.Duration
 }
 
+// telegramConfig holds Telegram bot configuration.
+type TelegramConfig struct {
+	BotToken string
+	ChatID   string
+}
+
 // load reads configuration from environment variables.
 func Load() (*Config, error) {
 	timeoutSec, _ := strconv.Atoi(getEnv("LLM_TIMEOUT_SECONDS", "30"))
@@ -48,6 +55,10 @@ func Load() (*Config, error) {
 			Model:   getEnv("LLM_MODEL", "gpt-4o-mini"),
 			BaseURL: getEnv("LLM_BASE_URL", "https://api.openai.com/v1"),
 			Timeout: time.Duration(timeoutSec) * time.Second,
+		},
+		Telegram: TelegramConfig{
+			BotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
+			ChatID:   getEnv("TELEGRAM_CHAT_ID", ""),
 		},
 	}
 
@@ -68,6 +79,12 @@ func (c *Config) Validate() error {
 	}
 	if c.LLM.Model == "" {
 		return fmt.Errorf("LLM_MODEL is required")
+	}
+	if c.Telegram.BotToken == "" {
+		return fmt.Errorf("TELEGRAM_BOT_TOKEN is required")
+	}
+	if c.Telegram.ChatID == "" {
+		return fmt.Errorf("TELEGRAM_CHAT_ID is required")
 	}
 	return nil
 }
